@@ -1,7 +1,6 @@
 'use strict';
 
 const autocannon = require('autocannon');
-var randomstring = require("randomstring")
 
 const instance = autocannon(
   {

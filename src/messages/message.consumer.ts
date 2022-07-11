@@ -14,14 +14,14 @@ import { Job } from 'bull';
 class MessageConsumer {
   @Process({
     name: 'messages-job',
-    concurrency: 10,
+    concurrency: 3,
   })
   async sendJob(job: Job<any>): Promise<void> {
     const { data } = job;
-    console.log(`🚀  ${new Date()} [Job] ${job.name} On Process => `, data);
-    const later = (delay, value) =>
-      new Promise((resolve) => setTimeout(resolve, delay, value));
-    await later(5000, 'DELAY');
+    const delayValue = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
+    console.log(`🚀  ${new Date()} | delay: ${delayValue} |  [Job] ${job.name} On Process CONTINUE => `, data);
+    const later = (delay, value) => new Promise((resolve) => setTimeout(resolve, delay, value));
+    await later(delayValue, 'DELAY');
     // throw new Error();
   }
 

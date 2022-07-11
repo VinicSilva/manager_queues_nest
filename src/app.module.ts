@@ -6,13 +6,16 @@ import { MessageProducer } from './messages/message.producer';
 
 @Module({
   imports: [
-    BullModule.forRootAsync({
-      useFactory: () => ({
-        redis: {
-          host: 'localhost',
-          port: 6379,
-        },
-      }),
+    BullModule.forRoot({
+      redis: {
+        host: 'localhost',
+        port: 6379,
+        password: 'hub'
+      },
+      settings:  {
+        lockDuration: 30000,
+        lockRenewTime: 15000,
+      }
     }),
     BullModule.registerQueue({
       name: 'messages-queue',
