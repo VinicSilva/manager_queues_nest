@@ -2,10 +2,7 @@ import Redis from 'ioredis'
 
 const redisClient = new Redis(
   6379,
-  'localhost',
-  {
-    password: 'hub',
-  },
+  'localhost'
 )
 
 const exists = async (key: string): Promise<boolean> => {

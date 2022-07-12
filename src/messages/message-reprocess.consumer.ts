@@ -10,32 +10,23 @@ import {
   Processor,
 } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
-import * as cacheHelper from './cache.helper';
 
 @Injectable()
-@Processor('messages-queue')
-class MessageConsumer {
-  constructor(@InjectQueue('messages-reprocess-queue') private queue: Queue) {}
+@Processor('messages-reprocess-queue')
+class MessageReprocessConsumer {
+  constructor(@InjectQueue('messages-queue') private queue: Queue) {}
 
   @Process({
-    name: 'messages-job',
+    name: 'messages-reprocess-job',
     concurrency: 10,
   })
   async sendJob(job: Job<any>): Promise<void> {
-    const { data } = job;
+    const { data, opts } = job;
     // console.log(`🚀  ${new Date()} | [Job] ${job.name} On Start Process => `, data);
-
-    if (await cacheHelper.get(data.contactKey)) {
-      await this.queue.add('messages-reprocess-job', data, job.opts)
-    } else {
-      await cacheHelper.set(data.contactKey, new Date().toString(), 60)
-      const delayValue = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
-      console.log(`🚀  ${new Date()} | delay: ${delayValue} |  [Job] ${job.name} On Process => `, data);
-      const later = (delay, value) => new Promise((resolve) => setTimeout(resolve, delay, value));
-      await later(delayValue, 'DELAY');
-      await cacheHelper.del(data.contactKey)
-      console.log(`🚀  ${new Date()} | [Job] ${job.name} Sent message => `, data);
-    }
+    await this.queue.add('messages-job', data, {
+      ...opts,
+      delay: 1000
+    })
   }
 
   @OnQueueActive()
@@ -61,7 +52,7 @@ class MessageConsumer {
 
   @OnQueueError()
   OnQueueError(error: Error) {
-    // console.log(`🚀  ${new Date()}[Job] On Error => (${error.message})`, {
+    // console.log(`🚀  ${new Date()} [Job] On Error => (${error.message})`, {
     //   error: error.message,
     //   stack: error.stack,
     // });
@@ -75,4 +66,4 @@ class MessageConsumer {
   }
 }
 
-export { MessageConsumer };
+export { MessageReprocessConsumer };
