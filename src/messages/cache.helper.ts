@@ -2,7 +2,10 @@ import Redis from 'ioredis'
 
 const redisClient = new Redis(
   6379,
-  'localhost'
+  'localhost',
+  {
+    password: 'hub'
+  }
 )
 
 const exists = async (key: string): Promise<boolean> => {
@@ -56,4 +59,8 @@ const lrem = async (key: string, value: string): Promise<void> => {
   await redisClient.lrem(key, 0, value)
 }
 
-export { get, set, exists, del, rpush, llen, lrem }
+const lrange = async (key: string, start: number = 0, end: number = -1): Promise<string[]> => {
+  return redisClient.lrange(key, start, end)
+}
+
+export { get, set, exists, del, rpush, llen, lrem, lrange }

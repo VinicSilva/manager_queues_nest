@@ -10,7 +10,8 @@ import { MessageProducer } from './messages/message.producer';
     BullModule.forRoot({
       redis: {
         host: 'localhost',
-        port: 6379
+        port: 6379,
+        password: 'hub'
       },
     }),
     BullModule.registerQueue({

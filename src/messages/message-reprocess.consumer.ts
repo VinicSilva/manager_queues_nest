@@ -52,10 +52,10 @@ class MessageReprocessConsumer {
 
   @OnQueueError()
   OnQueueError(error: Error) {
-    // console.log(`🚀  ${new Date()} [Job] On Error => (${error.message})`, {
-    //   error: error.message,
-    //   stack: error.stack,
-    // });
+    console.log(`🚀  ${new Date()} [Job] On Error => (${error.message})`, {
+      error: error.message,
+      stack: error.stack,
+    });
   }
 
   @OnQueueCleaned()

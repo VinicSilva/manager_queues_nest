@@ -9,6 +9,8 @@ class MessageProducer {
 
   async send(message: any): Promise<void> {
     console.log('🚀 ~ INSERT MESSAGE IN QUEUE: ', message);
+    await cacheHelper.rpush(message.contactKey, message.traceId)
+
     await this.queue.add('messages-job', message, {
       attempts: 3,
       removeOnComplete: true,
