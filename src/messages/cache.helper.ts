@@ -2,9 +2,9 @@ import Redis from 'ioredis'
 
 const redisClient = new Redis(
   6379,
-  'localhost',
+  '127.0.0.1',
   {
-    password: 'hub'
+    password: ''
   }
 )
 

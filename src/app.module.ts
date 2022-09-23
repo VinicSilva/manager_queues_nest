@@ -1,7 +1,7 @@
+import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { MessageReprocessConsumer } from './messages/message-reprocess.consumer';
 import { MessageConsumer } from './messages/message.consumer';
 import { MessageProducer } from './messages/message.producer';
 
@@ -9,19 +9,17 @@ import { MessageProducer } from './messages/message.producer';
   imports: [
     BullModule.forRoot({
       redis: {
-        host: 'localhost',
+        host: '127.0.0.1',
         port: 6379,
-        password: 'hub'
+        password: ''
       },
     }),
     BullModule.registerQueue({
       name: 'messages-queue',
-    },
-    {
-      name: 'messages-reprocess-queue',
     }),
+    HttpModule
   ],
   controllers: [AppController],
-  providers: [MessageConsumer, MessageProducer, MessageReprocessConsumer],
+  providers: [MessageConsumer, MessageProducer],
 })
 export class AppModule {}

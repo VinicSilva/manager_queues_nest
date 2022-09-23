@@ -1,15 +1,17 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bull';
-import * as cacheHelper from './cache.helper';
+import * as rTracer from 'cls-rtracer';
 
 @Injectable()
 class MessageProducer {
+  logger = new Logger(MessageProducer.name);
+
   constructor(@InjectQueue('messages-queue') private queue: Queue) {}
 
   async send(message: any): Promise<void> {
-    console.log('🚀 ~ INSERT MESSAGE IN QUEUE: ', message);
-    await cacheHelper.rpush(message.contactKey, message.traceId)
+    const traceId = rTracer.id() as string
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [${traceId}] - REQUEST GENERATE REPORT`);
 
     await this.queue.add('messages-job', message, {
       attempts: 3,
@@ -17,7 +19,7 @@ class MessageProducer {
       removeOnFail: true,
       backoff: {
         type: 'exponential',
-        delay: 2000,
+        delay: 10000,
       },
     });
   }

@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
-  InjectQueue,
   OnQueueActive,
   OnQueueCleaned,
   OnQueueCompleted,
@@ -9,57 +8,48 @@ import {
   Process,
   Processor,
 } from '@nestjs/bull';
-import { Job, Queue } from 'bull';
-import * as cacheHelper from './cache.helper';
+import { Job } from 'bull';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom, map } from 'rxjs';
+import { writeFileSync } from 'fs';
+
 
 @Injectable()
 @Processor('messages-queue')
 class MessageConsumer {
-  constructor(@InjectQueue('messages-reprocess-queue') private queue: Queue) {}
+  logger = new Logger(MessageConsumer.name);
+  constructor(private readonly httpService: HttpService) {}
 
   @Process({
     name: 'messages-job',
-    concurrency: 10,
+    concurrency: 5
   })
   async sendJob(job: Job<any>): Promise<void> {
-    const { data } = job;
-    const [firstData] = await cacheHelper.lrange(data.contactKey, 0, 0);
-    if (firstData && firstData !== data.traceId) {
-      await this.queue.add('messages-reprocess-job', data, job.opts)
-    } else {
-      const delayValue = Math.floor(Math.random() * (10000 - 5000 + 1)) + 5000;
-      console.log(`🚀  ${new Date()} | delay: ${delayValue} |  [Job] ${job.name} On Process => `, data);
-      const later = (delay, value) => new Promise((resolve) => setTimeout(resolve, delay, value));
-      await later(delayValue, 'DELAY');
-      await cacheHelper.lrem(data.contactKey, firstData)
-      console.log(`🚀  ${new Date()} | [Job] ${job.name} Sent message => `, data);
-    }
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] ${job.name} On Function => ${job.id}`);
+    const header = { headers: { 'Content-Type': 'application/json' } };
+    const response = await lastValueFrom(this.httpService.get('https://www.redesocialdecidades.org.br/indicators', header).pipe(map((res) => res.data)));
+    await writeFileSync(`/Users/marcosvinicius/workspace/manager_queues_nestjs/tmp/test-file-${(Math.random() + 1).toString(36).substring(7)}.json`, JSON.stringify(response, null, 2), 'utf8');
+    // this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} | RESPONSE |  [Job] ${job.name} On Process => `, response);
   }
 
   @OnQueueActive()
   onActive(job: Job) {
-    const { data } = job;
-    // console.log(`🚀  ${new Date()} [Job] ${job.name} On Active => `, data);
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] ${job.name} On Active => ${job.id}`);
   }
 
   @OnQueueCompleted()
   onQueueCompleted(job: Job) {
-    const { data } = job;
-    // console.log(`🚀  ${new Date()} [Job] ${job.name} On Completed => `, data);
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] ${job.name} On Completed => ${job.id}`);
   }
 
   @OnQueueFailed()
   OnQueueFailed(job: Job, error: Error) {
-    const { data } = job;
-    console.log(
-      `🚀  ${new Date()} [Job] ${job.name} On Failed => (${error.message})`,
-      data,
-    );
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] ${job.name} On Failed => (${error.message}) => ${job.id}`);
   }
 
   @OnQueueError()
   OnQueueError(error: Error) {
-    console.log(`🚀  ${new Date()}[Job] On Error => (${error.message})`, {
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] On Failed => (${error.message}) => `, {
       error: error.message,
       stack: error.stack,
     });
@@ -67,9 +57,7 @@ class MessageConsumer {
 
   @OnQueueCleaned()
   OnQueueCleaned(job: Job, type: string) {
-    console.log(`[Job] ${job.name} | ${type} | On Cleaned => `, {
-      ...job.data,
-    });
+    this.logger.log(`🚀  ${new Date().toLocaleDateString('pt-br')} [Job] ${job.name} | ${type} | On Cleaned => ${job.id}`);
   }
 }
 
